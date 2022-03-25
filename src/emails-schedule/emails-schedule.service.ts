@@ -2,58 +2,56 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, SchedulerRegistry } from '@nestjs/schedule';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
-import { TripulantesService } from 'src/tripulantes/tripulantes.service';
+import { CrewService } from 'src/crew/crew.service';
 
 @Injectable()
 export class EmailsScheduleService {
   private readonly logger = new Logger(EmailsScheduleService.name);
   constructor(
     private readonly emailService: MailerService,
-    private readonly tripulantes: TripulantesService,
+    private readonly crew: CrewService,
     private readonly configServise: ConfigService,
     private schedulerRegistry: SchedulerRegistry,
   ) {}
 
+  /**
+   * Trigger schedule email for birthday every day at 9:00 AM
+   */
   @Cron('0 0 9 * * *')
   triggerScheduleEmail() {
-    this.logger.debug('Called 00:45');
+    this.logger.debug('Called trigger Schedule Email');
     this.scheduleEmail();
-    this.getCrons();
   }
 
-  async scheduleEmail() {
-    const tripulantes = await this.tripulantes.findAll();
-    const tripulantesTo = tripulantes.map((tripulante) => ({
-      name: tripulante.name,
-      address: tripulante.email,
-    }));
+  /**
+   * Schedule to send emails
+   *
+   * @return  void
+   */
+  async scheduleEmail(): Promise<void> {
+    try {
+      const crew = await this.crew.findAll();
+      const creewEmails = crew.map((crewMember) => ({
+        name: crewMember.name,
+        address: crewMember.email,
+      }));
 
-    const birthdayBoys = await this.tripulantes.findBirthdayBoys();
+      const birthdayBoys = await this.crew.findBirthdayBoys();
 
-    for (const tripulante of birthdayBoys) {
-      this.logger.debug(`${tripulante}'s Birthday`);
-      this.emailService.sendMail({
-        to: tripulantesTo,
-        from: this.configServise.get('EMAIL_FROM'),
-        subject: this.configServise.get('EMAIL_SUBJECT') + ` ${tripulante}`,
-        template: 'birthday',
-        context: {
-          name: tripulante,
-        },
-      });
-    }
-  }
-
-  getCrons() {
-    const jobs = this.schedulerRegistry.getCronJobs();
-    jobs.forEach((value, key, map) => {
-      let next;
-      try {
-        next = value.nextDates().toDate();
-      } catch (e) {
-        next = 'error: next fire date is in the past!';
+      for (const crewMember of birthdayBoys) {
+        this.logger.debug(`It's ${crewMember}'s Birthday`);
+        await this.emailService.sendMail({
+          to: creewEmails,
+          from: this.configServise.get('EMAIL_FROM'),
+          subject: this.configServise.get('EMAIL_SUBJECT') + ` ${crewMember}`,
+          template: 'birthday',
+          context: {
+            name: crewMember,
+          },
+        });
       }
-      this.logger.log(`job: ${key} -> next: ${next}`);
-    });
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
 }
