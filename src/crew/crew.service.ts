@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Crew } from './crew.model';
+import { Client } from '@notionhq/client';
+import { QueryDatabaseResponse, GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
 
 @Injectable()
 export class CrewService {
@@ -26,12 +28,24 @@ export class CrewService {
     },
   ];
 
+  async getCrewList() {
+    const notion = new Client({ auth: process.env.NOTION_TOKEN });
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_DATABASE_ID,
+    });
+    response.results[0].properties.Email.email
+    const { results } = response;
+   
+    console.log('results', results);
+    return response;
+  }
+
   /**
    * Find all crew members
    *
-   * @return  {<Promise><Crew>[]}
+   * @return  crew
    */
-  async findAll(): Promise<Crew[]> {
+  async findAll() {
     return await this.crew;
   }
 
@@ -40,7 +54,7 @@ export class CrewService {
    *
    * @return  {[string]}
    */
-  async findBirthdayBoys() {
+  async findCrewBirthday() {
     const crew = this.crew;
 
     const hoy = new Date();

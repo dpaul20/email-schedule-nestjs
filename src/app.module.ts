@@ -7,6 +7,7 @@ import { EmailsScheduleModule } from './emails-schedule/emails-schedule.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
+      isGlobal: true,
       validationSchema: configValidationSchema,
     }),
     EmailsScheduleModule,

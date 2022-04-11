@@ -36,7 +36,7 @@ export class EmailsScheduleService {
         address: crewMember.email,
       }));
 
-      const birthdayBoys = await this.crew.findBirthdayBoys();
+      const birthdayBoys = await this.crew.findCrewBirthday();
 
       for (const crewMember of birthdayBoys) {
         this.logger.debug(`It's ${crewMember}'s Birthday`);

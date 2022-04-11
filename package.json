@@ -27,6 +27,7 @@
     "@nestjs/core": "^8.0.0",
     "@nestjs/platform-express": "^8.0.0",
     "@nestjs/schedule": "^1.0.2",
+    "@notionhq/client": "^1.0.4",
     "@types/cron": "^1.7.3",
     "@types/ejs": "^3.0.3",
     "@types/nodemailer": "^6.4.4",
