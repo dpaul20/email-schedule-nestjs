@@ -5,4 +5,5 @@ export interface Crew {
   isActive: boolean;
   position: string;
   image: string;
+  isBirthdayDate: boolean;
 }

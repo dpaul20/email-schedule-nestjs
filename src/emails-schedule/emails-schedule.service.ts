@@ -26,7 +26,7 @@ export class EmailsScheduleService {
   async getScheduledEmails() {
     console.log('getScheduledEmails');
     await this.scheduleEmail();
-    return 'null';
+    return;
   }
 
   /**
@@ -37,25 +37,28 @@ export class EmailsScheduleService {
   async scheduleEmail(): Promise<void> {
     try {
       const crew = await this.crew.getCrewList();
-      // const creewEmails = crew.map((crewMember) => ({
-      //   name: crewMember.name,
-      //   address: crewMember.email,
-      // }));
+      const crewEmails = crew.map((crewMember) => ({
+        name: crewMember.name,
+        address: crewMember.email,
+      }));
 
-      // const birthdayBoys = await this.crew.findCrewBirthday();
+      const currentBirthdays = crew.filter((member) => {
+        return member.isBirthdayDate;
+      });
 
-      // for (const crewMember of birthdayBoys) {
-      //   this.logger.debug(`It's ${crewMember}'s Birthday`);
-      //   await this.emailService.sendMail({
-      //     to: creewEmails,
-      //     from: this.configServise.get('EMAIL_FROM'),
-      //     subject: this.configServise.get('EMAIL_SUBJECT') + ` ${crewMember}`,
-      //     template: 'birthday',
-      //     context: {
-      //       name: crewMember,
-      //     },
-      //   });
-      // }
+      for (const crewMember of currentBirthdays) {
+        this.logger.debug(`It's ${crewMember.name}'s Birthday`);
+        await this.emailService.sendMail({
+          to: crewEmails,
+          from: this.configServise.get('EMAIL_FROM'),
+          subject:
+            this.configServise.get('EMAIL_SUBJECT') + ` ${crewMember.name}`,
+          template: 'birthday',
+          context: {
+            name: crewMember.name,
+          },
+        });
+      }
     } catch (error) {
       this.logger.error(error);
     }

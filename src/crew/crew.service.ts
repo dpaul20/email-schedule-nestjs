@@ -5,23 +5,43 @@ import { Client } from '@notionhq/client';
 @Injectable()
 export class CrewService {
   private crew: Crew[] = [];
-
+  today: Date = new Date();
+  currentMonth: number;
+  currentDay: number;
   async getCrewList() {
+    this.currentMonth = this.today.getUTCMonth();
+    this.currentDay = this.today.getUTCDate();
+
     const notion = new Client({ auth: process.env.NOTION_TOKEN });
     const response = await notion.databases.query({
       database_id: process.env.NOTION_DATABASE_ID,
+      filter: {
+        and: [
+          {
+            property: 'Active',
+            checkbox: {
+              equals: true,
+            },
+          },
+          {
+            property: 'Email',
+            email: {
+              is_not_empty: true,
+            },
+          },
+        ],
+      },
     });
 
     const { results } = response;
 
-    results.map((result) => {
+    this.crew = results.map((result) => {
       if ('properties' in result) {
-        const crewMember = this.getCrewMember(result.properties);
-
-        this.crew.push(crewMember);
+        return this.getCrewMember(result.properties);
       }
     });
 
+    console.log(this.crew);
     return this.crew;
   }
 
@@ -38,6 +58,10 @@ export class CrewService {
         memberProps.Date && memberProps.Date.date && memberProps.Date.date.start
           ? new Date(memberProps.Date.date.start)
           : null,
+      isBirthdayDate:
+        memberProps.Date && memberProps.Date.date && memberProps.Date.date.start
+          ? this.isBirthdayDate(new Date(memberProps.Date.date.start))
+          : false,
       email: memberProps.Email.email,
       position: memberProps.Position.select
         ? memberProps.Position.select.name
@@ -49,33 +73,13 @@ export class CrewService {
           ? memberProps.Image.files[0].file.url
           : 'no data',
     };
-    console.log(crewMember);
     return crewMember;
   }
 
-  /**
-   * Find crew members birthday
-   *
-   * @return  {[string]}
-   */
-  async findCrewBirthday() {
-    const crew = this.crew;
+  private isBirthdayDate(date: Date) {
+    const month = this.currentMonth - date.getUTCMonth();
+    const day = this.currentDay - date.getUTCDate();
 
-    const hoy = new Date();
-    const getMonth = hoy.getMonth();
-    const getDay = hoy.getDate();
-
-    const birthdayBoys = crew.filter((crewMember) => {
-      const cumpleanos = new Date(crewMember.date);
-      const month = getMonth - cumpleanos.getMonth();
-      const day = getDay - cumpleanos.getDate();
-      if (month === 0 && day === 0) {
-        return crewMember;
-      }
-    });
-
-    return await birthdayBoys.map((crewMember) => {
-      return crewMember.name;
-    });
+    return month === 0 && day === 0;
   }
 }
