@@ -23,6 +23,12 @@ export class EmailsScheduleService {
     this.scheduleEmail();
   }
 
+  async getScheduledEmails() {
+    console.log('getScheduledEmails');
+    await this.scheduleEmail();
+    return 'null';
+  }
+
   /**
    * Schedule to send emails
    *
@@ -30,26 +36,26 @@ export class EmailsScheduleService {
    */
   async scheduleEmail(): Promise<void> {
     try {
-      const crew = await this.crew.findAll();
-      const creewEmails = crew.map((crewMember) => ({
-        name: crewMember.name,
-        address: crewMember.email,
-      }));
+      const crew = await this.crew.getCrewList();
+      // const creewEmails = crew.map((crewMember) => ({
+      //   name: crewMember.name,
+      //   address: crewMember.email,
+      // }));
 
-      const birthdayBoys = await this.crew.findCrewBirthday();
+      // const birthdayBoys = await this.crew.findCrewBirthday();
 
-      for (const crewMember of birthdayBoys) {
-        this.logger.debug(`It's ${crewMember}'s Birthday`);
-        await this.emailService.sendMail({
-          to: creewEmails,
-          from: this.configServise.get('EMAIL_FROM'),
-          subject: this.configServise.get('EMAIL_SUBJECT') + ` ${crewMember}`,
-          template: 'birthday',
-          context: {
-            name: crewMember,
-          },
-        });
-      }
+      // for (const crewMember of birthdayBoys) {
+      //   this.logger.debug(`It's ${crewMember}'s Birthday`);
+      //   await this.emailService.sendMail({
+      //     to: creewEmails,
+      //     from: this.configServise.get('EMAIL_FROM'),
+      //     subject: this.configServise.get('EMAIL_SUBJECT') + ` ${crewMember}`,
+      //     template: 'birthday',
+      //     context: {
+      //       name: crewMember,
+      //     },
+      //   });
+      // }
     } catch (error) {
       this.logger.error(error);
     }

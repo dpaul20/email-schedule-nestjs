@@ -1,52 +1,56 @@
 import { Injectable } from '@nestjs/common';
 import { Crew } from './crew.model';
 import { Client } from '@notionhq/client';
-import { QueryDatabaseResponse, GetDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
 
 @Injectable()
 export class CrewService {
-  private crew: Crew[] = [
-    {
-      name: 'Dpaul',
-      date: '10/03/1989',
-      email: 'dpaul_20@hotmail.com',
-    },
-    {
-      name: 'Fulanita',
-      date: '03/25/1989',
-      email: 'fulanita@example.com',
-    },
-    {
-      name: 'Pepito',
-      date: '03/26/2000',
-      email: 'pepito@example.com',
-    },
-    {
-      name: 'Pepe',
-      date: '03/25/2000',
-      email: 'pepe@example.com',
-    },
-  ];
+  private crew: Crew[] = [];
 
   async getCrewList() {
     const notion = new Client({ auth: process.env.NOTION_TOKEN });
     const response = await notion.databases.query({
       database_id: process.env.NOTION_DATABASE_ID,
     });
-    response.results[0].properties.Email.email
+
     const { results } = response;
-   
-    console.log('results', results);
-    return response;
+
+    results.map((result) => {
+      if ('properties' in result) {
+        const crewMember = this.getCrewMember(result.properties);
+
+        this.crew.push(crewMember);
+      }
+    });
+
+    return this.crew;
   }
 
-  /**
-   * Find all crew members
-   *
-   * @return  crew
-   */
-  async findAll() {
-    return await this.crew;
+  private getCrewMember(memberProps): Crew {
+    const crewMember: Crew = {
+      isActive: memberProps.Active.checkbox,
+      name:
+        memberProps.Name &&
+        memberProps.Name.title &&
+        memberProps.Name.title[0].plain_text
+          ? memberProps.Name.title[0].plain_text
+          : 'no data',
+      date:
+        memberProps.Date && memberProps.Date.date && memberProps.Date.date.start
+          ? new Date(memberProps.Date.date.start)
+          : null,
+      email: memberProps.Email.email,
+      position: memberProps.Position.select
+        ? memberProps.Position.select.name
+        : 'no data',
+      image:
+        memberProps.Image.files &&
+        memberProps.Image.files.length > 0 &&
+        memberProps.Image.files[0].file
+          ? memberProps.Image.files[0].file.url
+          : 'no data',
+    };
+    console.log(crewMember);
+    return crewMember;
   }
 
   /**
