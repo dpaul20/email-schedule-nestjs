@@ -52,7 +52,7 @@ export class CrewService {
         memberProps.Name &&
         memberProps.Name.title &&
         memberProps.Name.title[0].plain_text
-          ? memberProps.Name.title[0].plain_text
+          ? this.capitalize(memberProps.Name.title[0].plain_text.toLowerCase())
           : 'no data',
       date:
         memberProps.Date && memberProps.Date.date && memberProps.Date.date.start
@@ -77,9 +77,16 @@ export class CrewService {
   }
 
   private isBirthdayDate(date: Date) {
-    const month = this.currentMonth - date.getUTCMonth();
-    const day = this.currentDay - date.getUTCDate();
+    const date1 = this.currentDay + '-' + this.currentMonth;
+    const date2 = date.getUTCDate() + '-' + date.getUTCMonth();
 
-    return month === 0 && day === 0;
+    return date1 === date2;
+  }
+
+  private capitalize(sentence: string) {
+    const words = sentence.split(' ').map((word) => {
+      return word[0].toUpperCase() + word.slice(1);
+    });
+    return words.join(' ');
   }
 }

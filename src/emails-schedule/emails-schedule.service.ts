@@ -56,6 +56,8 @@ export class EmailsScheduleService {
           template: 'birthday',
           context: {
             name: crewMember.name,
+            image: crewMember.image,
+            position: crewMember.position,
           },
         });
       }
