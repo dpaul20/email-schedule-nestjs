@@ -45,8 +45,8 @@ export class EmailsScheduleService {
             name: crewMember.name,
             image: crewMember.image,
             position: crewMember.position,
-            day: currentMonth,
-            month: currentDay,
+            day: currentDay,
+            month: currentMonth,
           },
         });
       }
