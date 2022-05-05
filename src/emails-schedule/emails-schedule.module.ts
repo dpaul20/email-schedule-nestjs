@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { EmailsScheduleService } from './emails-schedule.service';
-import { EmailsScheduleController } from './emails-schedule.controller';
 import { ConfigModule } from '@nestjs/config';
 import { CrewModule } from 'src/crew/crew.module';
 import { CrewService } from 'src/crew/crew.service';
@@ -29,7 +28,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
         },
         preview: false,
         template: {
-          dir: process.cwd() + '/src/templates/',
+          dir: process.cwd() + '/templates/',
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
@@ -38,7 +37,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
       }),
     }),
   ],
-  controllers: [EmailsScheduleController],
+  controllers: [],
   providers: [EmailsScheduleService, CrewService],
 })
 export class EmailsScheduleModule {}

@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Crew } from './crew.model';
-import { Client } from '@notionhq/client';
+import {
+  APIErrorCode,
+  Client,
+  ClientErrorCode,
+  isNotionClientError,
+} from '@notionhq/client';
 
 @Injectable()
 export class CrewService {
@@ -9,40 +14,58 @@ export class CrewService {
   currentMonth: number;
   currentDay: number;
   async getCrewList() {
+    console.log('Get Crew List');
     this.currentMonth = this.today.getUTCMonth();
     this.currentDay = this.today.getUTCDate();
-
-    const notion = new Client({ auth: process.env.NOTION_TOKEN });
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_DATABASE_ID,
-      filter: {
-        and: [
-          {
-            property: 'Active',
-            checkbox: {
-              equals: true,
+    try {
+      const notion = new Client({ auth: process.env.NOTION_TOKEN });
+      const response = await notion.databases.query({
+        database_id: process.env.NOTION_DATABASE_ID,
+        filter: {
+          and: [
+            {
+              property: 'Active',
+              checkbox: {
+                equals: true,
+              },
             },
-          },
-          {
-            property: 'Email',
-            email: {
-              is_not_empty: true,
+            {
+              property: 'Email',
+              email: {
+                is_not_empty: true,
+              },
             },
-          },
-        ],
-      },
-    });
+          ],
+        },
+      });
 
-    const { results } = response;
+      const { results } = response;
 
-    this.crew = results.map((result) => {
-      if ('properties' in result) {
-        return this.getCrewMember(result.properties);
+      this.crew = results.map((result) => {
+        if ('properties' in result) {
+          return this.getCrewMember(result.properties);
+        }
+      });
+
+      return this.crew;
+    } catch (error: unknown) {
+      console.error('Get Crew List', error);
+      if (isNotionClientError(error)) {
+        switch (error.code) {
+          case ClientErrorCode.RequestTimeout:
+            console.error('Notion error', ClientErrorCode.RequestTimeout);
+            break;
+          case APIErrorCode.ObjectNotFound:
+            console.error('Notion error', APIErrorCode.ObjectNotFound);
+            break;
+          case APIErrorCode.Unauthorized:
+            console.error('Notion error', APIErrorCode.Unauthorized);
+            break;
+          default:
+            console.error('Error code', error.code);
+        }
       }
-    });
-
-    console.log(this.crew);
-    return this.crew;
+    }
   }
 
   private getCrewMember(memberProps): Crew {
@@ -52,7 +75,7 @@ export class CrewService {
         memberProps.Name &&
         memberProps.Name.title &&
         memberProps.Name.title[0].plain_text
-          ? this.capitalize(memberProps.Name.title[0].plain_text.toLowerCase())
+          ? this.capitalize(memberProps.Name.title[0].plain_text)
           : 'no data',
       date:
         memberProps.Date && memberProps.Date.date && memberProps.Date.date.start
@@ -63,8 +86,8 @@ export class CrewService {
           ? this.isBirthdayDate(new Date(memberProps.Date.date.start))
           : false,
       email: memberProps.Email.email,
-      position: memberProps.Position.select
-        ? memberProps.Position.select.name
+      position: memberProps.Position.rich_text[0].plain_text
+        ? this.capitalize(memberProps.Position.rich_text[0].plain_text)
         : 'no data',
       image:
         memberProps.Image.files &&
@@ -84,6 +107,7 @@ export class CrewService {
   }
 
   private capitalize(sentence: string) {
+    sentence = sentence.toLowerCase();
     const words = sentence.split(' ').map((word) => {
       return word[0].toUpperCase() + word.slice(1);
     });
