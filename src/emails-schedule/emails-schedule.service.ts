@@ -1,33 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, SchedulerRegistry } from '@nestjs/schedule';
+import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { CrewService } from 'src/crew/crew.service';
 
 @Injectable()
 export class EmailsScheduleService {
-  private readonly logger = new Logger(EmailsScheduleService.name);
   constructor(
     private readonly emailService: MailerService,
     private readonly crew: CrewService,
     private readonly configServise: ConfigService,
-    private schedulerRegistry: SchedulerRegistry,
   ) {}
-
-  /**
-   * Trigger schedule email for birthday every day at 9:00 AM
-   */
-  @Cron('0 0 9 * * *')
-  triggerScheduleEmail() {
-    this.logger.debug('Called trigger Schedule Email');
-    this.scheduleEmail();
-  }
-
-  async getScheduledEmails() {
-    console.log('getScheduledEmails');
-    await this.scheduleEmail();
-    return;
-  }
 
   /**
    * Schedule to send emails
@@ -35,7 +17,12 @@ export class EmailsScheduleService {
    * @return  void
    */
   async scheduleEmail(): Promise<void> {
+    console.log('Schedule Email');
     try {
+      const today: Date = new Date();
+      const currentMonth: string = await this.getMonth(today.getUTCMonth());
+      const currentDay: number = today.getUTCDate();
+
       const crew = await this.crew.getCrewList();
       const crewEmails = crew.map((crewMember) => ({
         name: crewMember.name,
@@ -47,7 +34,7 @@ export class EmailsScheduleService {
       });
 
       for (const crewMember of currentBirthdays) {
-        this.logger.debug(`It's ${crewMember.name}'s Birthday`);
+        console.log(`It's ${crewMember.name}'s Birthday`);
         await this.emailService.sendMail({
           to: crewEmails,
           from: this.configServise.get('EMAIL_FROM'),
@@ -56,11 +43,33 @@ export class EmailsScheduleService {
           template: 'birthday',
           context: {
             name: crewMember.name,
+            image: crewMember.image,
+            position: crewMember.position,
+            day: currentDay,
+            month: currentMonth,
           },
         });
       }
     } catch (error) {
-      this.logger.error(error);
+      console.error('Schedule Email', error);
     }
+  }
+
+  async getMonth(month: number) {
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return monthNames[month];
   }
 }
