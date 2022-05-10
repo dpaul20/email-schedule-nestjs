@@ -23,5 +23,4 @@ functions:
   emails-schedule:
     handler: dist/serverless.handler
     events:
-      #- schedule: cron(0/5 * * * ? *)
-      - schedule: rate(1 minute)
+      - schedule: cron(0 6 * * ? *)
